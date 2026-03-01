@@ -183,7 +183,8 @@ class TestGenerateIndexHtml(unittest.TestCase):
             {"year": 2025, "count": 100, "cover": "thumbnails/abc.jpg"},
             {"year": 2024, "count": 200, "cover": "thumbnails/def.jpg"},
         ]
-        path = gg.generate_index_html(year_info, self.gallery, "TestFolder")
+        all_photos = [_sample_photo()]
+        path = gg.generate_index_html(year_info, all_photos, self.gallery, "TestFolder")
         self.assertTrue(path.exists())
         content = path.read_text(encoding="utf-8")
         self.assertIn("Photo Archive", content)
@@ -198,8 +199,19 @@ class TestGenerateIndexHtml(unittest.TestCase):
             {"year": 2025, "count": 10, "cover": "t/a.jpg"},
             {"year": 2023, "count": 20, "cover": "t/b.jpg"},
         ]
-        content = gg.generate_index_html(year_info, self.gallery, "T").read_text()
+        all_photos = [_sample_photo()]
+        content = gg.generate_index_html(year_info, all_photos, self.gallery, "T").read_text()
         self.assertLess(content.index("2025"), content.index("2023"))
+
+    def test_contains_search_filters(self):
+        year_info = [{"year": 2025, "count": 1, "cover": "t/a.jpg"}]
+        all_photos = [_sample_photo()]
+        content = gg.generate_index_html(year_info, all_photos, self.gallery, "T").read_text()
+        self.assertIn("f-iso-min", content)
+        self.assertIn("f-fn-min", content)
+        self.assertIn("f-fl-min", content)
+        self.assertIn("f-ss", content)
+        self.assertIn("applyFilters", content)
 
 
 class TestGenerateYearHtml(unittest.TestCase):
@@ -223,6 +235,11 @@ class TestGenerateYearHtml(unittest.TestCase):
         self.assertIn("f-lens", content)
         self.assertIn("f-sort", content)
         self.assertIn("f-q", content)
+        self.assertIn("f-iso-min", content)
+        self.assertIn("f-fn-min", content)
+        self.assertIn("f-fl-min", content)
+        self.assertIn("f-ss", content)
+        self.assertIn("resetFilters", content)
 
     def test_contains_photo_data(self):
         photos = [_sample_photo(cam="Nikon Z9", fl=85)]

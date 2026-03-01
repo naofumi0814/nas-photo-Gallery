@@ -251,10 +251,87 @@ CSS_INDEX = CSS_BASE + """\
 }
 .yc-y{font-size:2.2rem;font-weight:200;letter-spacing:.3em}
 .yc-n{font-size:.8rem;color:rgba(255,255,255,.55);margin-top:4px}
+.fb{
+  display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
+  padding:10px 16px;background:var(--surface);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+}
+.fb label{font-size:.68rem;color:var(--dim);letter-spacing:.04em}
+.fb select,.fb input[type=text],.fb input[type=number]{
+  background:var(--bg);color:var(--text);border:1px solid var(--border);
+  padding:4px 8px;font-size:.72rem;border-radius:3px;outline:none;
+  transition:border-color .2s;
+}
+.fb select:focus,.fb input:focus{border-color:var(--accent)}
+.fb input[type=text]{width:140px}
+.fb input[type=number]{width:72px}
+.fb input[type=number]::-webkit-inner-spin-button{opacity:.5}
+.fb .cnt{margin-left:auto;font-size:.72rem;color:var(--dim)}
+.fg{display:flex;align-items:center;gap:3px}
+.fg .sep{font-size:.6rem;color:var(--dim)}
+.fb .fb-reset{
+  background:none;border:1px solid var(--border);color:var(--dim);
+  padding:3px 8px;font-size:.65rem;border-radius:3px;cursor:pointer;
+  transition:color .2s,border-color .2s;
+}
+.fb .fb-reset:hover{color:var(--text);border-color:var(--accent)}
+.main{max-width:1440px;margin:0 auto;padding:16px 12px 60px}
+.mo{margin-bottom:32px;opacity:0;transform:translateY(14px);
+  transition:opacity .5s ease,transform .5s ease}
+.mo.vis{opacity:1;transform:translateY(0)}
+.mo-t{
+  font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--border);
+}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:var(--gap)}
+.gi{aspect-ratio:1;overflow:hidden;cursor:pointer;background:var(--surface);position:relative}
+.gi img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease;display:block}
+.gi:hover img{transform:scale(1.05)}
+.gi-ov{
+  position:absolute;bottom:0;left:0;right:0;padding:3px 5px;
+  background:linear-gradient(transparent,rgba(0,0,0,.75));
+  font-size:.55rem;color:rgba(255,255,255,.65);
+  opacity:0;transition:opacity .2s;pointer-events:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.gi:hover .gi-ov{opacity:1}
+.empty{text-align:center;padding:60px 20px;color:var(--dim);font-size:.85rem}
+.lb{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.97);flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.lb.open{display:flex}
+.lb img{max-width:92vw;max-height:80vh;object-fit:contain;
+  user-select:none;opacity:0;transition:opacity .25s ease}
+.lb img.ld{opacity:1}
+.lb-x{
+  position:absolute;top:10px;right:16px;background:none;border:none;
+  color:#fff;font-size:2rem;cursor:pointer;opacity:.5;transition:opacity .2s;z-index:1001;
+}
+.lb-x:hover{opacity:1}
+.lb-n{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.05);border:none;color:#fff;
+  font-size:2.5rem;padding:20px 14px;cursor:pointer;
+  opacity:.4;transition:opacity .2s,background .2s;
+}
+.lb-n:hover{opacity:.9;background:rgba(255,255,255,.1)}
+.lb-p{left:0;border-radius:0 4px 4px 0}
+.lb-nx{right:0;border-radius:4px 0 0 4px}
+.lb-i{
+  position:absolute;bottom:12px;text-align:center;width:100%;
+  font-size:.7rem;color:rgba(255,255,255,.4);letter-spacing:.03em;
+  pointer-events:none;line-height:1.6;
+}
 @media(max-width:600px){
   .yg{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding:16px 8px}
   .yc-y{font-size:1.5rem}.hdr{padding:32px 16px 18px}
   .hdr h1{font-size:1rem;letter-spacing:.3em}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:2px}
+  .fb{gap:4px 8px;padding:8px 10px}
+  .fb input[type=text]{width:100px}
+  .fb input[type=number]{width:56px}
 }
 """
 
@@ -271,14 +348,24 @@ CSS_YEAR = CSS_BASE + """\
   border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
 }
 .fb label{font-size:.68rem;color:var(--dim);letter-spacing:.04em}
-.fb select,.fb input[type=text]{
+.fb select,.fb input[type=text],.fb input[type=number]{
   background:var(--bg);color:var(--text);border:1px solid var(--border);
   padding:4px 8px;font-size:.72rem;border-radius:3px;outline:none;
   transition:border-color .2s;
 }
 .fb select:focus,.fb input:focus{border-color:var(--accent)}
 .fb input[type=text]{width:140px}
+.fb input[type=number]{width:72px}
+.fb input[type=number]::-webkit-inner-spin-button{opacity:.5}
 .fb .cnt{margin-left:auto;font-size:.72rem;color:var(--dim)}
+.fg{display:flex;align-items:center;gap:3px}
+.fg .sep{font-size:.6rem;color:var(--dim)}
+.fb .fb-reset{
+  background:none;border:1px solid var(--border);color:var(--dim);
+  padding:3px 8px;font-size:.65rem;border-radius:3px;cursor:pointer;
+  transition:color .2s,border-color .2s;
+}
+.fb .fb-reset:hover{color:var(--text);border-color:var(--accent)}
 .main{max-width:1440px;margin:0 auto;padding:16px 12px 60px}
 .mo{margin-bottom:32px;opacity:0;transform:translateY(14px);
   transition:opacity .5s ease,transform .5s ease}
@@ -333,6 +420,7 @@ CSS_YEAR = CSS_BASE + """\
   .hdr{padding:32px 16px 18px}.hdr h1{font-size:1rem;letter-spacing:.3em}
   .fb{gap:4px 8px;padding:8px 10px}
   .fb input[type=text]{width:100px}
+  .fb input[type=number]{width:56px}
   .back{left:10px;font-size:.7rem}
 }
 """
@@ -355,21 +443,44 @@ const lb=document.getElementById('lb'),
 function init(){
   const cams=[...new Set(ALL.filter(p=>p.cam).map(p=>p.cam))].sort();
   const lens=[...new Set(ALL.filter(p=>p.lens).map(p=>p.lens))].sort();
+  const ss=[...new Set(ALL.filter(p=>p.ss).map(p=>p.ss))].sort((a,b)=>{
+    const toSec=s=>{const m=s.match(/^1\\/([0-9]+)s$/);return m?1/+m[1]:parseFloat(s)};
+    return toSec(a)-toSec(b);
+  });
   const sel=(id,arr)=>{const s=document.getElementById(id);
     arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)})};
-  sel('f-cam',cams);sel('f-lens',lens);
+  sel('f-cam',cams);sel('f-lens',lens);sel('f-ss',ss);
+  applyFilters();
+}
+
+function nv(id){const v=document.getElementById(id).value;return v===''?null:parseFloat(v)}
+
+function resetFilters(){
+  ['f-cam','f-lens','f-ss','f-sort'].forEach(id=>{document.getElementById(id).selectedIndex=0});
+  ['f-iso-min','f-iso-max','f-fn-min','f-fn-max','f-fl-min','f-fl-max','f-q'].forEach(id=>{document.getElementById(id).value=''});
   applyFilters();
 }
 
 function applyFilters(){
   const cam=document.getElementById('f-cam').value;
   const lens=document.getElementById('f-lens').value;
+  const ss=document.getElementById('f-ss').value;
   const q=document.getElementById('f-q').value.toLowerCase();
   const sort=document.getElementById('f-sort').value;
+  const isoMin=nv('f-iso-min'),isoMax=nv('f-iso-max');
+  const fnMin=nv('f-fn-min'),fnMax=nv('f-fn-max');
+  const flMin=nv('f-fl-min'),flMax=nv('f-fl-max');
 
   vis=ALL.filter(p=>{
     if(cam&&p.cam!==cam)return false;
     if(lens&&p.lens!==lens)return false;
+    if(ss&&p.ss!==ss)return false;
+    if(isoMin!==null&&(!p.iso||p.iso<isoMin))return false;
+    if(isoMax!==null&&(!p.iso||p.iso>isoMax))return false;
+    if(fnMin!==null&&(!p.fn||p.fn<fnMin))return false;
+    if(fnMax!==null&&(!p.fn||p.fn>fnMax))return false;
+    if(flMin!==null&&(!p.fl||p.fl<flMin))return false;
+    if(flMax!==null&&(!p.fl||p.fl>flMax))return false;
     if(q&&!p.f.toLowerCase().includes(q)
        &&!p.cam.toLowerCase().includes(q)
        &&!p.lens.toLowerCase().includes(q))return false;
@@ -460,13 +571,177 @@ const obs=new IntersectionObserver(function(es){
 init();
 """
 
+# ══════════════════════════════════════════════════════════════
+#  JavaScript (index page — search mode)
+# ══════════════════════════════════════════════════════════════
+
+JS_INDEX = """\
+const ALL=__DATA__;
+const YEARS=__YEARS__;
+const MN=['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+let vis=[],ci=0,searchMode=false;
+const lb=document.getElementById('lb'),
+      li=document.getElementById('li'),
+      ln=document.getElementById('ln'),
+      gr=document.getElementById('grid-root'),
+      ct=document.getElementById('cnt'),
+      yg=document.getElementById('year-grid'),
+      fb=document.getElementById('filter-bar');
+
+function init(){
+  const cams=[...new Set(ALL.filter(p=>p.cam).map(p=>p.cam))].sort();
+  const lens=[...new Set(ALL.filter(p=>p.lens).map(p=>p.lens))].sort();
+  const ss=[...new Set(ALL.filter(p=>p.ss).map(p=>p.ss))].sort((a,b)=>{
+    const toSec=s=>{const m=s.match(/^1\\\\/([0-9]+)s$/);return m?1/+m[1]:parseFloat(s)};
+    return toSec(a)-toSec(b);
+  });
+  const sel=(id,arr)=>{const s=document.getElementById(id);
+    arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o)})};
+  sel('f-cam',cams);sel('f-lens',lens);sel('f-ss',ss);
+}
+
+function nv(id){const v=document.getElementById(id).value;return v===''?null:parseFloat(v)}
+
+function hasAnyFilter(){
+  if(document.getElementById('f-cam').value)return true;
+  if(document.getElementById('f-lens').value)return true;
+  if(document.getElementById('f-ss').value)return true;
+  if(document.getElementById('f-q').value)return true;
+  const ids=['f-iso-min','f-iso-max','f-fn-min','f-fn-max','f-fl-min','f-fl-max'];
+  return ids.some(id=>document.getElementById(id).value!=='');
+}
+
+function applyFilters(){
+  searchMode=hasAnyFilter();
+  if(!searchMode){
+    yg.style.display='';gr.style.display='none';gr.innerHTML='';
+    ct.textContent=ALL.length+' 枚';return;
+  }
+  yg.style.display='none';gr.style.display='';
+
+  const cam=document.getElementById('f-cam').value;
+  const lens=document.getElementById('f-lens').value;
+  const ss=document.getElementById('f-ss').value;
+  const q=document.getElementById('f-q').value.toLowerCase();
+  const sort=document.getElementById('f-sort').value;
+  const isoMin=nv('f-iso-min'),isoMax=nv('f-iso-max');
+  const fnMin=nv('f-fn-min'),fnMax=nv('f-fn-max');
+  const flMin=nv('f-fl-min'),flMax=nv('f-fl-max');
+
+  vis=ALL.filter(p=>{
+    if(cam&&p.cam!==cam)return false;
+    if(lens&&p.lens!==lens)return false;
+    if(ss&&p.ss!==ss)return false;
+    if(isoMin!==null&&(!p.iso||p.iso<isoMin))return false;
+    if(isoMax!==null&&(!p.iso||p.iso>isoMax))return false;
+    if(fnMin!==null&&(!p.fn||p.fn<fnMin))return false;
+    if(fnMax!==null&&(!p.fn||p.fn>fnMax))return false;
+    if(flMin!==null&&(!p.fl||p.fl<flMin))return false;
+    if(flMax!==null&&(!p.fl||p.fl>flMax))return false;
+    if(q&&!p.f.toLowerCase().includes(q)
+       &&!p.cam.toLowerCase().includes(q)
+       &&!p.lens.toLowerCase().includes(q))return false;
+    return true;
+  });
+
+  const [key,dir]=sort.split('_');
+  const asc=dir==='a';
+  vis.sort((a,b)=>{
+    let va,vb;
+    if(key==='date'){va=a.s;vb=b.s}
+    else if(key==='cam'){va=a.cam||'\\uffff';vb=b.cam||'\\uffff'}
+    else if(key==='lens'){va=a.lens||'\\uffff';vb=b.lens||'\\uffff'}
+    else if(key==='fl'){va=a.fl||99999;vb=b.fl||99999}
+    else if(key==='iso'){va=a.iso||99999;vb=b.iso||99999}
+    else if(key==='fn'){va=a.fn||99999;vb=b.fn||99999}
+    else{va=a.s;vb=b.s}
+    if(typeof va==='string')return asc?va.localeCompare(vb):vb.localeCompare(va);
+    return asc?va-vb:vb-va;
+  });
+
+  vis.forEach((p,i)=>p._i=i);
+  ct.textContent=vis.length+' 枚';
+  renderGrid();
+}
+
+function renderGrid(){
+  if(!vis.length){gr.innerHTML='<div class="empty">条件に一致する写真がありません</div>';return}
+  const byYM={};
+  vis.forEach(p=>{const k=p.s.substring(0,6);if(!byYM[k])byYM[k]=[];byYM[k].push(p)});
+  const keys=Object.keys(byYM).sort().reverse();
+  let out='';
+  keys.forEach(k=>{
+    const y=k.substring(0,4),m=parseInt(k.substring(4,6));
+    out+='<section class="mo"><h2 class="mo-t">'+y+'年 '+MN[m]+'</h2><div class="grid">';
+    byYM[k].forEach(p=>{
+      let ov='';
+      if(p.cam)ov+=p.cam;
+      if(p.fl){ov+=(ov?' · ':'')+p.fl+'mm'}
+      if(p.fn){ov+=(ov?' · ':'')+'f/'+p.fn}
+      out+='<div class="gi" onclick="openLB('+p._i+')">';
+      out+='<img loading="lazy" src="'+p.t+'" alt="">';
+      if(ov)out+='<div class="gi-ov">'+ov+'</div>';
+      out+='</div>';
+    });
+    out+='</div></section>';
+  });
+  gr.innerHTML=out;
+  document.querySelectorAll('.mo').forEach(el=>obs.observe(el));
+}
+
+function resetFilters(){
+  ['f-cam','f-lens','f-ss','f-sort'].forEach(id=>{document.getElementById(id).selectedIndex=0});
+  ['f-iso-min','f-iso-max','f-fn-min','f-fn-max','f-fl-min','f-fl-max','f-q'].forEach(id=>{document.getElementById(id).value=''});
+  applyFilters();
+}
+
+/* ── Lightbox ── */
+function openLB(i){ci=i;showLB();lb.classList.add('open');document.body.style.overflow='hidden'}
+function closeLB(){lb.classList.remove('open');document.body.style.overflow=''}
+function navLB(d){ci=(ci+d+vis.length)%vis.length;showLB()}
+function showLB(){
+  const p=vis[ci];
+  li.classList.remove('ld');li.onload=function(){this.classList.add('ld')};
+  li.src=p.v;
+  let l1=(ci+1)+' / '+vis.length+'  \\u00b7  '+p.d+'  \\u00b7  '+p.f;
+  const parts=[];
+  if(p.cam)parts.push(p.cam);if(p.lens)parts.push(p.lens);
+  if(p.fl)parts.push(p.fl+'mm');if(p.fn)parts.push('f/'+p.fn);
+  if(p.ss)parts.push(p.ss);if(p.iso)parts.push('ISO '+p.iso);
+  let l2=parts.join('  \\u00b7  ');
+  ln.innerHTML=l1+(l2?'<br>'+l2:'');
+}
+document.addEventListener('keydown',function(e){
+  if(!lb.classList.contains('open'))return;
+  if(e.key==='Escape')closeLB();
+  if(e.key==='ArrowLeft')navLB(-1);
+  if(e.key==='ArrowRight')navLB(1);
+});
+lb.addEventListener('click',function(e){if(e.target===lb)closeLB()});
+let tx=0;
+lb.addEventListener('touchstart',function(e){tx=e.touches[0].clientX});
+lb.addEventListener('touchend',function(e){
+  const dx=e.changedTouches[0].clientX-tx;
+  if(dx>50)navLB(-1);else if(dx<-50)navLB(1);
+});
+
+const obs=new IntersectionObserver(function(es){
+  es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target)}});
+},{threshold:0.05});
+
+init();
+"""
+
 
 # ══════════════════════════════════════════════════════════════
 #  HTML 生成
 # ══════════════════════════════════════════════════════════════
 
-def generate_index_html(year_info: list[dict], gallery: Path, title: str) -> Path:
-    """年選択ページを生成。"""
+def generate_index_html(
+    year_info: list[dict], all_photos: list[dict],
+    gallery: Path, title: str,
+) -> Path:
+    """年選択ページを生成（検索機能付き）。"""
     total = sum(y["count"] for y in year_info)
 
     cards = []
@@ -479,6 +754,21 @@ def generate_index_html(year_info: list[dict], gallery: Path, title: str) -> Pat
             f'<div class="yc-n">{yi["count"]:,} 枚</div>'
             f'</div></a>'
         )
+
+    # JSON for all photos (index page search)
+    js_photos = []
+    for p in all_photos:
+        js_photos.append({
+            "f": p["f"], "t": p["t"], "v": p["v"],
+            "d": p["d"], "s": p["s"], "cam": p["cam"],
+            "lens": p["lens"], "fl": p["fl"], "fn": p["fn"],
+            "ss": p["ss"], "iso": p["iso"],
+        })
+    js_data = json.dumps(js_photos, ensure_ascii=False)
+    js_years = json.dumps(
+        [{"year": yi["year"], "count": yi["count"]} for yi in year_info],
+        ensure_ascii=False,
+    )
 
     html = f"""\
 <!DOCTYPE html>
@@ -495,10 +785,57 @@ def generate_index_html(year_info: list[dict], gallery: Path, title: str) -> Pat
   <h1>Photo Archive</h1>
   <p class="sub">{total:,} Photos &mdash; {h(title)}</p>
 </header>
-<div class="yg">
+
+<div class="fb" id="filter-bar">
+  <label>並べ替え</label>
+  <select id="f-sort" onchange="applyFilters()">
+    <option value="date_d">日付（新→旧）</option>
+    <option value="date_a">日付（旧→新）</option>
+    <option value="cam_a">カメラ名</option>
+    <option value="lens_a">レンズ名</option>
+    <option value="fl_a">焦点距離（広角→望遠）</option>
+    <option value="fl_d">焦点距離（望遠→広角）</option>
+    <option value="fn_a">絞り（開放→）</option>
+    <option value="iso_a">ISO（低→高）</option>
+    <option value="iso_d">ISO（高→低）</option>
+  </select>
+  <label>カメラ</label>
+  <select id="f-cam" onchange="applyFilters()"><option value="">すべて</option></select>
+  <label>レンズ</label>
+  <select id="f-lens" onchange="applyFilters()"><option value="">すべて</option></select>
+  <label>ISO</label>
+  <div class="fg"><input type="number" id="f-iso-min" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-iso-max" placeholder="上限" onchange="applyFilters()"></div>
+  <label>F値</label>
+  <div class="fg"><input type="number" id="f-fn-min" step="0.1" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-fn-max" step="0.1" placeholder="上限" onchange="applyFilters()"></div>
+  <label>焦点距離</label>
+  <div class="fg"><input type="number" id="f-fl-min" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-fl-max" placeholder="上限" onchange="applyFilters()"></div>
+  <label>SS</label>
+  <select id="f-ss" onchange="applyFilters()"><option value="">すべて</option></select>
+  <label>検索</label>
+  <input type="text" id="f-q" placeholder="ファイル名・カメラ…" oninput="applyFilters()">
+  <button class="fb-reset" onclick="resetFilters()">リセット</button>
+  <span class="cnt" id="cnt">{total:,} 枚</span>
+</div>
+
+<div class="yg" id="year-grid">
 {"".join(cards)}
 </div>
+
+<main class="main" id="grid-root" style="display:none"></main>
+
+<div class="lb" id="lb">
+  <button class="lb-x" onclick="closeLB()" aria-label="Close">&times;</button>
+  <button class="lb-n lb-p" onclick="navLB(-1)" aria-label="Previous">&#8249;</button>
+  <button class="lb-n lb-nx" onclick="navLB(1)" aria-label="Next">&#8250;</button>
+  <img id="li" src="" alt="">
+  <div class="lb-i" id="ln"></div>
+</div>
+
 <footer class="ft">Generated by Photo Archive</footer>
+
+<script>
+{JS_INDEX.replace("__DATA__", js_data).replace("__YEARS__", js_years)}
+</script>
 </body>
 </html>"""
 
@@ -557,8 +894,17 @@ def generate_year_html(
   <select id="f-cam" onchange="applyFilters()"><option value="">すべて</option></select>
   <label>レンズ</label>
   <select id="f-lens" onchange="applyFilters()"><option value="">すべて</option></select>
+  <label>ISO</label>
+  <div class="fg"><input type="number" id="f-iso-min" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-iso-max" placeholder="上限" onchange="applyFilters()"></div>
+  <label>F値</label>
+  <div class="fg"><input type="number" id="f-fn-min" step="0.1" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-fn-max" step="0.1" placeholder="上限" onchange="applyFilters()"></div>
+  <label>焦点距離</label>
+  <div class="fg"><input type="number" id="f-fl-min" placeholder="下限" onchange="applyFilters()"><span class="sep">–</span><input type="number" id="f-fl-max" placeholder="上限" onchange="applyFilters()"></div>
+  <label>SS</label>
+  <select id="f-ss" onchange="applyFilters()"><option value="">すべて</option></select>
   <label>検索</label>
   <input type="text" id="f-q" placeholder="ファイル名・カメラ…" oninput="applyFilters()">
+  <button class="fb-reset" onclick="resetFilters()">リセット</button>
   <span class="cnt" id="cnt"></span>
 </div>
 
@@ -674,7 +1020,7 @@ def main():
         print(f"    {year}: {len(yr_photos):,} 枚")
 
     # インデックスページ生成
-    index_path = generate_index_html(year_info, gallery, root.name)
+    index_path = generate_index_html(year_info, results, gallery, root.name)
 
     print()
     print("=" * 56)
