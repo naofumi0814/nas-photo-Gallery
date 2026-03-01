@@ -12,7 +12,7 @@ from .scanner import FileEntry
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS photos (
@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS photos (
 );
 """
 
+CREATE_SHA1_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_photos_sha1 ON photos(sha1) WHERE sha1 IS NOT NULL;
+"""
+
 CREATE_META = """
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
@@ -37,12 +41,32 @@ CREATE TABLE IF NOT EXISTS meta (
 """
 
 
+def compute_file_sha1(filepath: str) -> str:
+    """Compute SHA1 hash of a file. Reads in 64KB chunks."""
+    h = hashlib.sha1()
+    with open(filepath, "rb") as f:
+        while True:
+            chunk = f.read(65536)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
 @dataclass
 class DiffResult:
     new: List[FileEntry]
     updated: List[FileEntry]
     deleted: List[str]         # relative_path list
     unchanged: List[str]       # relative_path list
+
+
+@dataclass
+class DuplicateInfo:
+    """Info about a duplicate detection."""
+    new_path: str              # the new file that is a duplicate
+    existing_path: str         # the already-registered path with same sha1
+    sha1: str
 
 
 class Manifest:
@@ -57,10 +81,10 @@ class Manifest:
     def _init_schema(self):
         cur = self.conn.cursor()
         cur.execute(CREATE_TABLE)
+        cur.execute(CREATE_SHA1_INDEX)
         cur.execute(CREATE_META)
-        # Store schema version
         cur.execute(
-            "INSERT OR IGNORE INTO meta(key, value) VALUES (?, ?)",
+            "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
             ("schema_version", str(SCHEMA_VERSION)),
         )
         self.conn.commit()
@@ -108,6 +132,57 @@ class Manifest:
             deleted=deleted_paths,
             unchanged=unchanged_files,
         )
+
+    # --- Duplicate detection ---
+
+    def find_active_by_sha1(self, sha1: str) -> Optional[str]:
+        """Return relative_path of an active entry with this sha1, or None."""
+        cur = self.conn.execute(
+            "SELECT relative_path FROM photos WHERE sha1 = ? AND status = 'active' LIMIT 1",
+            (sha1,),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
+
+    def find_deleted_by_sha1(self, sha1: str) -> Optional[str]:
+        """Return relative_path of a deleted entry with this sha1, or None.
+
+        Used for detecting file moves: same content at a new path,
+        old path marked deleted.
+        """
+        cur = self.conn.execute(
+            "SELECT relative_path FROM photos WHERE sha1 = ? AND status = 'deleted' LIMIT 1",
+            (sha1,),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
+
+    def adopt_moved_file(self, old_path: str, new_path: str,
+                         size_bytes: int, mtime: float):
+        """Handle a file that moved: copy metadata from old entry to new path,
+        then mark old path as deleted.
+
+        The old entry's meta_json/thumb_path/view_path are preserved under
+        the new relative_path. The caller should still regenerate thumb/view
+        since paths have changed.
+        """
+        cur = self.conn.execute(
+            "SELECT sha1, meta_json FROM photos WHERE relative_path = ?",
+            (old_path,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return
+        sha1, meta_json = row
+
+        # Mark old path as deleted
+        self.conn.execute(
+            "UPDATE photos SET status = 'deleted', updated_at = datetime('now') WHERE relative_path = ?",
+            (old_path,),
+        )
+        logger.info("File move detected: %s -> %s (sha1=%s)", old_path, new_path, sha1)
+
+    # --- Standard CRUD ---
 
     def upsert(self, relative_path: str, size_bytes: int, mtime: float,
                meta_json: str, thumb_path: str, view_path: str,
