@@ -129,12 +129,16 @@ class TestProcessOne(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.root, ignore_errors=True)
 
-    def test_generates_thumb_and_view(self):
+    def test_generates_thumb_and_links_original(self):
         r = gg.process_one(self.root / "test.jpg", self.root, self.gallery)
         self.assertIsNotNone(r)
         self.assertEqual(r["f"], "test.jpg")
+        # サムネイルは生成される
         self.assertTrue((self.gallery / r["t"]).exists())
-        self.assertTrue((self.gallery / r["v"]).exists())
+        # viewは元写真への相対パス（_galleryからの相対）
+        self.assertNotIn("views/", r["v"])
+        view_abs = (self.gallery / r["v"]).resolve()
+        self.assertTrue(view_abs.exists())
 
     def test_returns_none_for_invalid_file(self):
         bad = self.root / "bad.jpg"

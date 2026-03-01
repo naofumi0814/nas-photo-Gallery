@@ -46,10 +46,8 @@ except ImportError:
 
 SUPPORTED_EXT = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
 THUMB_LONG_EDGE = 320
-VIEW_LONG_EDGE = 1600
 GALLERY_DIR = "_gallery"
 QUALITY_THUMB = 82
-QUALITY_VIEW = 90
 
 MONTH_JA = [
     "", "1月", "2月", "3月", "4月", "5月", "6月",
@@ -168,7 +166,9 @@ def process_one(photo: Path, root: Path, gallery: Path) -> dict | None:
     rel = str(photo.relative_to(root)).replace("\\", "/")
     name = hashlib.md5(rel.encode()).hexdigest()[:16]
     thumb_path = gallery / "thumbnails" / f"{name}.jpg"
-    view_path = gallery / "views" / f"{name}.jpg"
+
+    # ライトボックス用: _gallery/ から元写真への相対パス
+    view_rel = os.path.relpath(photo, gallery).replace("\\", "/")
 
     try:
         exif_info = extract_exif(photo)
@@ -180,20 +180,15 @@ def process_one(photo: Path, root: Path, gallery: Path) -> dict | None:
             except Exception:
                 pass
 
-            # View (from original)
-            view = img.copy()
-            view.thumbnail((VIEW_LONG_EDGE, VIEW_LONG_EDGE), Image.LANCZOS)
-            to_rgb(view).save(view_path, "JPEG", quality=QUALITY_VIEW)
-
-            # Thumbnail (from view — faster)
-            thumb = view.copy()
+            # サムネイルのみ生成（元写真は直接参照）
+            thumb = img.copy()
             thumb.thumbnail((THUMB_LONG_EDGE, THUMB_LONG_EDGE), Image.LANCZOS)
             to_rgb(thumb).save(thumb_path, "JPEG", quality=QUALITY_THUMB)
 
         return {
             "f": rel,
             "t": f"thumbnails/{name}.jpg",
-            "v": f"views/{name}.jpg",
+            "v": view_rel,
             "d": date.strftime("%Y-%m-%d %H:%M"),
             "s": date.strftime("%Y%m%d%H%M%S"),
             "y": date.year,
@@ -625,13 +620,12 @@ def main():
     print(f"  → {len(photos):,} 枚見つかりました")
     print()
 
-    # 出力フォルダ準備
+    # 出力フォルダ準備（サムネイルのみ生成、元写真は直接リンク）
     gallery = root / GALLERY_DIR
-    for subdir in ("thumbnails", "views"):
-        d = gallery / subdir
-        if d.exists():
-            shutil.rmtree(d)
-        d.mkdir(parents=True, exist_ok=True)
+    thumb_dir = gallery / "thumbnails"
+    if thumb_dir.exists():
+        shutil.rmtree(thumb_dir)
+    thumb_dir.mkdir(parents=True, exist_ok=True)
 
     # 写真処理
     results = []
