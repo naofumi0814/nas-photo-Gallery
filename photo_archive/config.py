@@ -68,6 +68,15 @@ class Config:
             cfg.open_after = args.open
         return cfg
 
+    def apply_defaults(self):
+        """Fill in missing values with sensible defaults.
+
+        Called after from_args so CLI/config values take priority.
+        - output_root defaults to <input_root>/_gallery/
+        """
+        if self.input_root and not self.output_root:
+            self.output_root = os.path.join(self.input_root, "_gallery")
+
     def validate(self):
         if not self.input_root:
             raise ValueError("input_root is required")

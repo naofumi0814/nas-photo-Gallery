@@ -10,23 +10,72 @@
 
 ■ 必要環境
   - Python 3.9 以上
-  - Pillow ライブラリ（pip install Pillow）
+  - Pillow ライブラリ（自動インストール可）
 
-■ セットアップ
-  1. config.example.json を config.json にコピー
-  2. config.json を編集:
-     - input_root:  写真が入っているNASフォルダ（UNCパス可）
-     - output_root: ギャラリーを出力するNASフォルダ（UNCパス可）
-  3. Pillow をインストール:
-     pip install Pillow
-  4. 仮想環境を使う場合（推奨）:
-     python -m venv .venv
-     .venv\Scripts\pip install Pillow
+===========================================================
+  ■ クイックスタート（最短手順）
+===========================================================
 
-■ 実行方法
+  1. ツール一式を好きなフォルダに展開する
+     例: C:\tools\photo-archive\
+
+  2. setup.cmd をダブルクリック（初回1回だけ）
+     → .venv 作成 + Pillow インストール
+     → PhotoArchive_RunHere.cmd が自動生成される
+
+  3. 生成された PhotoArchive_RunHere.cmd を写真フォルダにコピー
+
+  4. 写真フォルダ内の PhotoArchive_RunHere.cmd をダブルクリック
+
+  以上！ config.json の編集は不要です。
+  ギャラリーは写真フォルダ内の _gallery/ に生成されます。
+
+  【構成イメージ】
+
+    C:\tools\photo-archive\         ← ツール本体
+      setup.cmd                     ← 初回に1回ダブルクリック
+      photo_archive\
+      templates\
+      assets_src\
+      .venv\                        ← setup.cmd が自動作成
+
+    \\NAS\share\photos\             ← 写真フォルダ
+      2024\
+      2025\
+      PhotoArchive_RunHere.cmd      ← ★ ダブルクリックで実行
+      _gallery\                     ← ★ ここに自動生成される
+        index.html
+        thumbnails\
+        views\
+        ...
+
+===========================================================
+  ■ 出力先をカスタマイズしたい場合
+===========================================================
+
+  デフォルトでは _gallery/ に出力されますが、変更したい場合は
+  config.json を作成してください。
+
+  方法 A: 写真フォルダに config.json を置く（そのフォルダ専用）
+  方法 B: ツール本体フォルダに config.json を置く（全フォルダ共通）
+
+  config.json の例:
+    {
+      "output_root": "\\\\NAS\\share\\gallery\\my-archive",
+      "site_title": "My Photos"
+    }
+
+  ※ input_root は不要です（cmdの場所が自動で使われます）
+
+  【config.json の探索順序】
+    優先1: 写真フォルダ（cmdと同じフォルダ）の config.json
+    優先2: ツール本体フォルダ（TOOL_HOME）の config.json
+    優先3: config.json なし → デフォルト設定
+
+■ 実行方法（すべて）
 
   A) 写真フォルダでダブルクリック実行（推奨）:
-     → 下記「写真フォルダでダブルクリック運用」を参照
+     PhotoArchive_RunHere.cmd をダブルクリック
 
   B) ツール本体フォルダでダブルクリック実行:
      build_gallery.cmd をダブルクリック
@@ -36,67 +85,6 @@
 
   D) コマンドラインでパス指定:
      python -m photo_archive build -i "\\NAS\share\photos" -o "\\NAS\share\gallery"
-
-===========================================================
-  ■ 写真フォルダでダブルクリック運用
-===========================================================
-
-  最も手軽な運用方法です。写真フォルダに起動用cmdを1つ置くだけで、
-  そのフォルダを自動的に入力元として処理します。
-
-  【構成イメージ】
-
-    C:\tools\photo-archive\          ← ツール本体（ローカルPC）
-      photo_archive\
-      templates\
-      assets_src\
-      .venv\
-      config.json                    ← output_root 等の設定
-
-    \\NAS\share\photos\              ← 写真フォルダ（NAS）
-      2024\
-      2025\
-      PhotoArchive_RunHere.cmd       ← これをダブルクリック！
-
-  【セットアップ手順】
-
-  1. ツール本体を任意のローカルフォルダに配置
-     例: C:\tools\photo-archive\
-
-  2. ツール本体フォルダに config.json を作成
-     - input_root は空でOK（起動時に自動設定される）
-     - output_root は必ず設定すること
-
-  3. PhotoArchive_RunHere.cmd をテキストエディタで開き、
-     先頭の TOOL_HOME を編集：
-
-       set "TOOL_HOME=C:\tools\photo-archive"
-
-     .venv を使わない場合は PYTHON も変更:
-
-       set "PYTHON=python"
-
-  4. 編集した PhotoArchive_RunHere.cmd を写真フォルダにコピー
-
-  5. 写真フォルダ内の PhotoArchive_RunHere.cmd をダブルクリック
-
-  【config.json の探索順序】
-
-  起動時、以下の順序で config.json を探します:
-    優先1: 写真フォルダ（cmdと同じフォルダ）の config.json
-    優先2: ツール本体フォルダ（TOOL_HOME）の config.json
-
-  写真フォルダごとに異なる設定を使いたい場合は、
-  そのフォルダに config.json を置けば個別設定が使えます。
-
-  【注意事項】
-
-  - config.json の input_root は起動時に自動上書きされます
-    （cmdが置かれたフォルダが常に input_root になる）
-  - output_root は必ず config.json で指定してください
-  - ツール本体を写真フォルダにコピーする必要はありません
-  - ロックファイルは output_root 側に作られます
-  - 写真ファイルは一切改変されません（読み取り専用アクセス）
 
 ■ コマンドラインオプション
   --config, -c     設定ファイルパス（デフォルト: config.json）

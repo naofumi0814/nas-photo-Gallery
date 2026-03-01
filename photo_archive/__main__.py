@@ -47,6 +47,7 @@ def main():
     if args.command == "build":
         try:
             config = Config.from_args(args)
+            config.apply_defaults()
             config.validate()
         except (ValueError, FileNotFoundError) as exc:
             print(f"設定エラー: {exc}", file=sys.stderr)
