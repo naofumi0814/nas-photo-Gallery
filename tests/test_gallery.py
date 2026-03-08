@@ -269,5 +269,105 @@ class TestGenerateYearHtml(unittest.TestCase):
         self.assertIn("ISO", content)
 
 
+# ── Manifest & incremental processing ────────────────────────
+
+class TestManifest(unittest.TestCase):
+    def setUp(self):
+        self.gallery = Path(tempfile.mkdtemp()) / "_gallery"
+        self.gallery.mkdir(parents=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.gallery.parent, ignore_errors=True)
+
+    def test_load_empty_manifest(self):
+        m = gg.load_manifest(self.gallery)
+        self.assertEqual(m, {})
+
+    def test_save_and_load_manifest(self):
+        data = {"test.jpg": {"mt": 123.0, "sz": 456, "ch": "abc",
+                             "data": _sample_photo()}}
+        gg.save_manifest(self.gallery, data)
+        loaded = gg.load_manifest(self.gallery)
+        self.assertEqual(loaded["test.jpg"]["ch"], "abc")
+
+    def test_load_corrupt_manifest(self):
+        (self.gallery / gg.MANIFEST_FILE).write_text("not json")
+        m = gg.load_manifest(self.gallery)
+        self.assertEqual(m, {})
+
+
+class TestContentHash(unittest.TestCase):
+    def test_same_content_same_hash(self):
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            f1 = tmp / "a.bin"
+            f2 = tmp / "b.bin"
+            data = os.urandom(1024)
+            f1.write_bytes(data)
+            f2.write_bytes(data)
+            self.assertEqual(gg.content_hash(f1), gg.content_hash(f2))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_different_content_different_hash(self):
+        tmp = Path(tempfile.mkdtemp())
+        try:
+            f1 = tmp / "a.bin"
+            f2 = tmp / "b.bin"
+            f1.write_bytes(os.urandom(1024))
+            f2.write_bytes(os.urandom(1024))
+            self.assertNotEqual(gg.content_hash(f1), gg.content_hash(f2))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
+class TestIncrementalProcessing(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        self.gallery = self.root / "_gallery"
+        (self.gallery / "thumbnails").mkdir(parents=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.root, ignore_errors=True)
+
+    def test_process_reuses_cached_entry(self):
+        """process_one の結果をマニフェストに保存し、再利用できる。"""
+        img_path = self.root / "photo.jpg"
+        gg.Image.new("RGB", (100, 100), (200, 100, 50)).save(
+            str(img_path), "JPEG",
+        )
+        result = gg.process_one(img_path, self.root, self.gallery)
+        self.assertIsNotNone(result)
+
+        st = img_path.stat()
+        ch = gg.content_hash(img_path)
+        manifest = {
+            "photo.jpg": {
+                "mt": st.st_mtime,
+                "sz": st.st_size,
+                "ch": ch,
+                "data": result,
+            }
+        }
+        gg.save_manifest(self.gallery, manifest)
+        loaded = gg.load_manifest(self.gallery)
+        self.assertEqual(loaded["photo.jpg"]["data"]["f"], "photo.jpg")
+
+    def test_duplicate_files_have_same_hash(self):
+        """同一内容のファイルは同じハッシュになる。"""
+        img_path = self.root / "photo.jpg"
+        gg.Image.new("RGB", (100, 100), (200, 100, 50)).save(
+            str(img_path), "JPEG",
+        )
+        sub = self.root / "sub"
+        sub.mkdir()
+        dup_path = sub / "copy.jpg"
+        shutil.copy2(str(img_path), str(dup_path))
+        self.assertEqual(
+            gg.content_hash(img_path),
+            gg.content_hash(dup_path),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

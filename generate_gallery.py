@@ -48,6 +48,8 @@ SUPPORTED_EXT = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
 THUMB_LONG_EDGE = 320
 GALLERY_DIR = "_gallery"
 QUALITY_THUMB = 82
+MANIFEST_FILE = "manifest.json"
+CONTENT_HASH_CHUNK = 64 * 1024  # 64KB for fast content hashing
 
 MONTH_JA = [
     "", "1月", "2月", "3月", "4月", "5月", "6月",
@@ -71,6 +73,35 @@ def find_photos(root: Path) -> list[Path]:
         except ValueError:
             results.append(p)
     return results
+
+
+# ── マニフェスト（差分処理用）─────────────────────────────────
+
+def load_manifest(gallery: Path) -> dict:
+    """既存のマニフェストを読み込む。"""
+    path = gallery / MANIFEST_FILE
+    if path.exists():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def save_manifest(gallery: Path, manifest: dict) -> None:
+    """マニフェストを保存する。"""
+    path = gallery / MANIFEST_FILE
+    path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+
+
+def content_hash(path: Path) -> str:
+    """ファイルのコンテンツハッシュを計算（先頭チャンク + サイズ）。"""
+    h = hashlib.md5()
+    size = path.stat().st_size
+    h.update(size.to_bytes(8, "little"))
+    with open(path, "rb") as f:
+        h.update(f.read(CONTENT_HASH_CHUNK))
+    return h.hexdigest()
 
 
 # ── EXIF 抽出 ────────────────────────────────────────────────
@@ -969,28 +1000,95 @@ def main():
     # 出力フォルダ準備（サムネイルのみ生成、元写真は直接リンク）
     gallery = root / GALLERY_DIR
     thumb_dir = gallery / "thumbnails"
-    if thumb_dir.exists():
-        shutil.rmtree(thumb_dir)
     thumb_dir.mkdir(parents=True, exist_ok=True)
 
-    # 写真処理
+    # マニフェスト読み込み（差分処理用）
+    manifest = load_manifest(gallery)
+    current_rels = set()
+
+    # 写真処理（差分）
     results = []
     total = len(photos)
     skip = 0
+    cached = 0
+    dedup = 0
+    seen_hashes: dict[str, str] = {}  # content_hash -> rel path (dedup)
+
+    # マニフェストから既知のハッシュを復元
+    for rel, entry in manifest.items():
+        ch = entry.get("ch")
+        if ch:
+            seen_hashes[ch] = rel
+
     for i, photo in enumerate(photos):
         pct = (i + 1) * 100 // total
         bar = "#" * (pct // 5) + "-" * (20 - pct // 5)
         print(f"\r  [{bar}] {i+1:,}/{total:,} ({pct}%)", end="", flush=True)
 
+        rel = str(photo.relative_to(root)).replace("\\", "/")
+
+        # 重複チェック（コンテンツハッシュ）
+        try:
+            ch = content_hash(photo)
+        except OSError:
+            skip += 1
+            continue
+
+        if ch in seen_hashes and seen_hashes[ch] != rel:
+            dedup += 1
+            continue
+
+        seen_hashes[ch] = rel
+        current_rels.add(rel)
+
+        # キャッシュヒット判定（mtime + size が同じならスキップ）
+        st = photo.stat()
+        entry = manifest.get(rel)
+        if entry:
+            if (entry.get("mt") == st.st_mtime
+                    and entry.get("sz") == st.st_size
+                    and (gallery / entry["data"]["t"]).exists()):
+                results.append(entry["data"])
+                cached += 1
+                continue
+
+        # 新規 or 変更あり → 処理
         result = process_one(photo, root, gallery)
         if result:
             results.append(result)
+            manifest[rel] = {
+                "mt": st.st_mtime,
+                "sz": st.st_size,
+                "ch": ch,
+                "data": result,
+            }
         else:
             skip += 1
 
+    # 削除された写真のサムネイルとマニフェスト項目をクリーンアップ
+    removed = [r for r in manifest if r not in current_rels]
+    for r in removed:
+        entry = manifest.pop(r)
+        old_thumb = gallery / entry["data"]["t"]
+        if old_thumb.exists():
+            old_thumb.unlink()
+
+    save_manifest(gallery, manifest)
+
     print()
+    status = []
+    if cached:
+        status.append(f"キャッシュ {cached}")
+    if len(results) - cached > 0:
+        status.append(f"新規処理 {len(results) - cached}")
+    if dedup:
+        status.append(f"重複除外 {dedup}")
     if skip:
-        print(f"  ({skip} 枚スキップ)")
+        status.append(f"スキップ {skip}")
+    if removed:
+        status.append(f"削除 {len(removed)}")
+    if status:
+        print(f"  ({', '.join(status)})")
     print()
 
     if not results:
