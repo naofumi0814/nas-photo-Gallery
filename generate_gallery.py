@@ -1078,14 +1078,15 @@ def generate_month_html(
     year: int, month: int, photos: list[dict],
     gallery: Path, title: str,
 ) -> list[Path]:
-    """月別ページを生成。1000枚超の場合は複数ページに分割。"""
+    """月別ページを生成。1000枚超の場合は500枚ずつに分割。"""
     total = len(photos)
+    month_chunk = YEAR_PAGE_LIMIT // 2  # 500枚ずつ
     if total > YEAR_PAGE_LIMIT:
-        num_pages = (total + YEAR_PAGE_LIMIT - 1) // YEAR_PAGE_LIMIT
+        num_pages = (total + month_chunk - 1) // month_chunk
         chunks = []
         for i in range(num_pages):
-            start = i * YEAR_PAGE_LIMIT
-            chunks.append(photos[start:start + YEAR_PAGE_LIMIT])
+            start = i * month_chunk
+            chunks.append(photos[start:start + month_chunk])
     else:
         chunks = [photos]
 

@@ -318,20 +318,23 @@ class TestGenerateMonthHtml(unittest.TestCase):
 
     def test_splits_large_month_into_pages(self):
         # Create enough photos to exceed YEAR_PAGE_LIMIT
+        # month_chunk = YEAR_PAGE_LIMIT // 2, so limit=6 → chunk=3
         old_limit = gg.YEAR_PAGE_LIMIT
-        gg.YEAR_PAGE_LIMIT = 5  # temporarily lower for testing
+        gg.YEAR_PAGE_LIMIT = 6  # chunk = 3
         try:
             photos = [_sample_photo(f=f"photo_{i}.jpg", s=f"2025030{i}120000")
-                      for i in range(12)]
+                      for i in range(10)]
             paths = gg.generate_month_html(2025, 3, photos, self.gallery, "T")
-            self.assertEqual(len(paths), 3)  # 12 photos / 5 per page = 3 pages
+            # 10 photos / 3 per page = 4 pages
+            self.assertEqual(len(paths), 4)
             self.assertEqual(paths[0].name, "2025_03_1.html")
             self.assertEqual(paths[1].name, "2025_03_2.html")
             self.assertEqual(paths[2].name, "2025_03_3.html")
+            self.assertEqual(paths[3].name, "2025_03_4.html")
             # Check pagination links
             content = paths[0].read_text()
             self.assertIn("2025_03_2.html", content)
-            self.assertIn("2025_03_3.html", content)
+            self.assertIn("2025_03_4.html", content)
         finally:
             gg.YEAR_PAGE_LIMIT = old_limit
 
