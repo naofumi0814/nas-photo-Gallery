@@ -269,6 +269,85 @@ class TestGenerateYearHtml(unittest.TestCase):
         self.assertIn("ISO", content)
 
 
+# ── Monthly pagination ────────────────────────────────────────
+
+class TestGenerateYearMonthSelectorHtml(unittest.TestCase):
+    def setUp(self):
+        self.gallery = Path(tempfile.mkdtemp()) / "_gallery"
+        self.gallery.mkdir(parents=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.gallery.parent, ignore_errors=True)
+
+    def test_creates_year_html_with_month_links(self):
+        month_info = [
+            {"month": 1, "count": 500, "cover": "t/a.jpg"},
+            {"month": 6, "count": 600, "cover": "t/b.jpg"},
+        ]
+        path = gg.generate_year_month_selector_html(
+            2025, month_info, self.gallery, "T",
+        )
+        self.assertEqual(path.name, "2025.html")
+        content = path.read_text()
+        self.assertIn("2025_01.html", content)
+        self.assertIn("2025_06.html", content)
+        self.assertIn("1月", content)
+        self.assertIn("6月", content)
+        self.assertIn("index.html", content)
+
+
+class TestGenerateMonthHtml(unittest.TestCase):
+    def setUp(self):
+        self.gallery = Path(tempfile.mkdtemp()) / "_gallery"
+        self.gallery.mkdir(parents=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.gallery.parent, ignore_errors=True)
+
+    def test_creates_month_html(self):
+        photos = [_sample_photo()]
+        path = gg.generate_month_html(2025, 3, photos, self.gallery, "T")
+        self.assertEqual(path.name, "2025_03.html")
+        content = path.read_text()
+        self.assertIn("3月", content)
+        self.assertIn("2025.html", content)  # back link to year page
+        self.assertIn("f-cam", content)
+        self.assertIn("f-iso-min", content)
+        self.assertIn('id="lb"', content)
+
+
+# ── Photo organization ───────────────────────────────────────
+
+class TestOrganizePhotos(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        # Create a simple JPEG
+        self.img_path = self.root / "test.jpg"
+        gg.Image.new("RGB", (10, 10)).save(str(self.img_path), "JPEG")
+
+    def tearDown(self):
+        shutil.rmtree(self.root, ignore_errors=True)
+
+    def test_moves_photo_to_date_folder(self):
+        photos = [self.img_path]
+        new_photos = gg.organize_photos(self.root, photos)
+        self.assertEqual(len(new_photos), 1)
+        # Photo should now be inside a YYYY/MM/ folder
+        rel = new_photos[0].relative_to(self.root)
+        parts = rel.parts
+        self.assertEqual(len(parts), 3)  # YYYY/MM/filename
+        self.assertTrue(parts[0].isdigit())
+        self.assertTrue(parts[1].isdigit())
+
+    def test_skips_already_organized(self):
+        # Move photo first
+        new_photos = gg.organize_photos(self.root, [self.img_path])
+        # Run again — should skip
+        result = gg.organize_photos(self.root, new_photos)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0], new_photos[0])
+
+
 # ── Manifest & incremental processing ────────────────────────
 
 class TestManifest(unittest.TestCase):
