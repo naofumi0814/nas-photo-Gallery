@@ -1017,12 +1017,18 @@ def generate_year_month_selector_html(
 
     cards = []
     for mi in month_info:
+        # 月が分割されている場合は _1 ページにリンク
+        href = mi.get("href", f"{year}_{mi['month']:02d}.html")
+        pages = mi.get("pages", 1)
+        sub = f'{mi["count"]:,} 枚'
+        if pages > 1:
+            sub += f'（{pages} ページ）'
         cards.append(
-            f'<a class="yc" href="{year}_{mi["month"]:02d}.html">'
+            f'<a class="yc" href="{href}">'
             f'<img src="{h(mi["cover"])}" alt="">'
             f'<div class="yc-ov">'
             f'<div class="yc-y">{MONTH_JA[mi["month"]]}</div>'
-            f'<div class="yc-n">{mi["count"]:,} 枚</div>'
+            f'<div class="yc-n">{sub}</div>'
             f'</div></a>'
         )
 
@@ -1054,40 +1060,81 @@ def generate_year_month_selector_html(
     return path
 
 
+def _make_page_nav(pages: list[str], current_idx: int) -> str:
+    """ページネーションHTML生成。"""
+    if len(pages) <= 1:
+        return ""
+    nav = '<div style="text-align:center;padding:12px 0 4px;font-size:.75rem">'
+    for i, href in enumerate(pages):
+        if i == current_idx:
+            nav += f'<span style="color:var(--accent);margin:0 6px;font-weight:600">{i + 1}</span>'
+        else:
+            nav += f'<a href="{href}" style="color:var(--dim);margin:0 6px">{i + 1}</a>'
+    nav += "</div>"
+    return nav
+
+
 def generate_month_html(
     year: int, month: int, photos: list[dict],
     gallery: Path, title: str,
-) -> Path:
-    """月別ページを生成（年ページと同じフィルタ/ライトボックス付き）。"""
-    js_photos = []
-    for p in photos:
-        js_photos.append({
-            "f": p["f"], "t": p["t"], "v": p["v"],
-            "d": p["d"], "s": p["s"], "cam": p["cam"],
-            "lens": p["lens"], "fl": p["fl"], "fn": p["fn"],
-            "ss": p["ss"], "iso": p["iso"],
-        })
+) -> list[Path]:
+    """月別ページを生成。1000枚超の場合は複数ページに分割。"""
+    total = len(photos)
+    if total > YEAR_PAGE_LIMIT:
+        num_pages = (total + YEAR_PAGE_LIMIT - 1) // YEAR_PAGE_LIMIT
+        chunks = []
+        for i in range(num_pages):
+            start = i * YEAR_PAGE_LIMIT
+            chunks.append(photos[start:start + YEAR_PAGE_LIMIT])
+    else:
+        chunks = [photos]
 
-    js_data = json.dumps(js_photos, ensure_ascii=False)
-    month_label = MONTH_JA[month]
+    # ページファイル名リスト
+    page_files = []
+    for i in range(len(chunks)):
+        if len(chunks) == 1:
+            page_files.append(f"{year}_{month:02d}.html")
+        else:
+            page_files.append(f"{year}_{month:02d}_{i + 1}.html")
 
-    html = f"""\
+    paths = []
+    for page_idx, chunk in enumerate(chunks):
+        js_photos = []
+        for p in chunk:
+            js_photos.append({
+                "f": p["f"], "t": p["t"], "v": p["v"],
+                "d": p["d"], "s": p["s"], "cam": p["cam"],
+                "lens": p["lens"], "fl": p["fl"], "fn": p["fn"],
+                "ss": p["ss"], "iso": p["iso"],
+            })
+
+        js_data = json.dumps(js_photos, ensure_ascii=False)
+        month_label = MONTH_JA[month]
+        page_nav = _make_page_nav(page_files, page_idx)
+
+        page_title = f"{year} {month_label}"
+        if len(chunks) > 1:
+            page_title += f" ({page_idx + 1}/{len(chunks)})"
+
+        sub_count = f"{len(chunk):,} / {total:,}" if len(chunks) > 1 else f"{total:,}"
+
+        html = f"""\
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{year} {month_label} — {h(title)} — Photo Archive</title>
+<title>{page_title} — {h(title)} — Photo Archive</title>
 <style>
 {CSS_YEAR}</style>
 </head>
 <body>
 <header class="hdr">
   <a class="back" href="{year}.html">&#8249; {year}年</a>
-  <h1>{year} {month_label}</h1>
-  <p class="sub">{len(photos):,} Photos &mdash; {h(title)}</p>
+  <h1>{page_title}</h1>
+  <p class="sub">{sub_count} Photos &mdash; {h(title)}</p>
 </header>
-
+{page_nav}
 <div class="fb">
   <label>並べ替え</label>
   <select id="f-sort" onchange="applyFilters()">
@@ -1137,9 +1184,11 @@ def generate_month_html(
 </body>
 </html>"""
 
-    path = gallery / f"{year}_{month:02d}.html"
-    path.write_text(html, encoding="utf-8")
-    return path
+        path = gallery / page_files[page_idx]
+        path.write_text(html, encoding="utf-8")
+        paths.append(path)
+
+    return paths
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1309,12 +1358,16 @@ def main():
             month_info = []
             for m in sorted(by_month.keys()):
                 m_photos = by_month[m]
-                generate_month_html(year, m, m_photos, gallery, root.name)
-                month_info.append({
+                m_paths = generate_month_html(year, m, m_photos, gallery, root.name)
+                mi = {
                     "month": m,
                     "count": len(m_photos),
                     "cover": m_photos[0]["t"],
-                })
+                    "pages": len(m_paths),
+                }
+                if len(m_paths) > 1:
+                    mi["href"] = m_paths[0].name
+                month_info.append(mi)
 
             generate_year_month_selector_html(
                 year, month_info, gallery, root.name,

@@ -306,14 +306,34 @@ class TestGenerateMonthHtml(unittest.TestCase):
 
     def test_creates_month_html(self):
         photos = [_sample_photo()]
-        path = gg.generate_month_html(2025, 3, photos, self.gallery, "T")
-        self.assertEqual(path.name, "2025_03.html")
-        content = path.read_text()
+        paths = gg.generate_month_html(2025, 3, photos, self.gallery, "T")
+        self.assertEqual(len(paths), 1)
+        self.assertEqual(paths[0].name, "2025_03.html")
+        content = paths[0].read_text()
         self.assertIn("3月", content)
         self.assertIn("2025.html", content)  # back link to year page
         self.assertIn("f-cam", content)
         self.assertIn("f-iso-min", content)
         self.assertIn('id="lb"', content)
+
+    def test_splits_large_month_into_pages(self):
+        # Create enough photos to exceed YEAR_PAGE_LIMIT
+        old_limit = gg.YEAR_PAGE_LIMIT
+        gg.YEAR_PAGE_LIMIT = 5  # temporarily lower for testing
+        try:
+            photos = [_sample_photo(f=f"photo_{i}.jpg", s=f"2025030{i}120000")
+                      for i in range(12)]
+            paths = gg.generate_month_html(2025, 3, photos, self.gallery, "T")
+            self.assertEqual(len(paths), 3)  # 12 photos / 5 per page = 3 pages
+            self.assertEqual(paths[0].name, "2025_03_1.html")
+            self.assertEqual(paths[1].name, "2025_03_2.html")
+            self.assertEqual(paths[2].name, "2025_03_3.html")
+            # Check pagination links
+            content = paths[0].read_text()
+            self.assertIn("2025_03_2.html", content)
+            self.assertIn("2025_03_3.html", content)
+        finally:
+            gg.YEAR_PAGE_LIMIT = old_limit
 
 
 # ── Photo organization ───────────────────────────────────────
